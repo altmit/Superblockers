@@ -1,6 +1,7 @@
 import { useState } from "react";
 import styled from "styled-components";
 import Cell from "./Cell";
+import Dialog from "./Dialog/Dialog";
 
 type Props = {
   rows?: number;
@@ -25,6 +26,8 @@ export default function GameBoard({
 
   const [gridState, setGridState] = useState(grid);
 
+  const isClear = gridState.every((row) => row.every((cell) => cell === false));
+
   const onClick = (rowIndex: number, columnIndex: number) => {
     const balloonGroup = getBalloonGroup(rowIndex, columnIndex);
     const newGrid = [...gridState];
@@ -32,6 +35,10 @@ export default function GameBoard({
     balloonGroup.forEach(([x, y]) => (newGrid[x][y] = false));
 
     setGridState(newGrid);
+  };
+
+  const onReset = () => {
+    setGridState(grid);
   };
 
   const getBalloonGroup = (x: number, y: number) => {
@@ -96,21 +103,26 @@ export default function GameBoard({
   };
 
   return (
-    <div>
-      {gridState.map((row, rowIndex) => (
-        <Row key={rowIndex}>
-          {row.map((hasBalloon, columnIndex) => (
-            <Cell
-              key={`${rowIndex}-${columnIndex}`}
-              hasBalloon={hasBalloon}
-              onClick={
-                hasBalloon ? () => onClick(rowIndex, columnIndex) : () => {}
-              }
-            />
-          ))}
-        </Row>
-      ))}
-    </div>
+    <>
+      <div>
+        {gridState.map((row, rowIndex) => (
+          <Row key={rowIndex}>
+            {row.map((hasBalloon, columnIndex) => (
+              <Cell
+                key={`${rowIndex}-${columnIndex}`}
+                hasBalloon={hasBalloon}
+                onClick={
+                  hasBalloon ? () => onClick(rowIndex, columnIndex) : () => {}
+                }
+              />
+            ))}
+          </Row>
+        ))}
+      </div>
+      {isClear && (
+        <Dialog isOpen={isClear} title="성공🎉" onConfirm={onReset} />
+      )}
+    </>
   );
 }
 
