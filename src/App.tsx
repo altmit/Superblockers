@@ -1,5 +1,19 @@
-function App() {
-  return <>hello world</>;
+import styled from "styled-components";
+import GameBoard from "./balloonGame/GameBoard";
+
+export default function App() {
+  return (
+    <>
+      <GameBoardWrapper>
+        <GameBoard />
+      </GameBoardWrapper>
+    </>
+  );
 }
 
-export default App;
+const GameBoardWrapper = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+`;
