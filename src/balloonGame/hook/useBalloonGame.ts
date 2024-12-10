@@ -90,7 +90,6 @@ export default function useBalloonGame({
       balloonGroup.forEach(([x, y]) => (newGrid[x][y] = false));
 
       setGrid(newGrid);
-
       setBalloonCount(getBalloonCount(newGrid));
     } else {
       setIsFailure(true);
@@ -98,7 +97,10 @@ export default function useBalloonGame({
   };
 
   const onReset = () => {
-    setGrid(generateGrid(rows, columns, probability));
+    const newGrid = generateGrid(rows, columns, probability);
+
+    setGrid(newGrid);
+    setBalloonCount(getBalloonCount(newGrid));
     setIsFailure(false);
   };
 
