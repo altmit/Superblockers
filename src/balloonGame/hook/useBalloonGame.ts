@@ -61,35 +61,16 @@ export default function useBalloonGame({
       sum.push([x, y]);
       checkedGrid[x][y] = true;
 
-      const top = [x + directions[0][0], y + directions[0][1]];
-      const down = [x + directions[1][0], y + directions[1][1]];
-      const left = [x + directions[2][0], y + directions[2][1]];
-      const right = [x + directions[3][0], y + directions[3][1]];
+      directions.forEach((direction) => {
+        const current = [x + direction[0], y + direction[1]];
 
-      if (isValid(top[0], top[1], checkedGrid)) {
-        checkedGrid[top[0]][top[1]] = true;
-        if (grid[top[0]][top[1]]) {
-          sum.push(...calcGroup(top[0], top[1], checkedGrid));
+        if (isValid(current[0], current[1], checkedGrid)) {
+          checkedGrid[current[0]][current[1]] = true;
+          if (grid[current[0]][current[1]]) {
+            sum.push(...calcGroup(current[0], current[1], checkedGrid));
+          }
         }
-      }
-      if (isValid(down[0], down[1], checkedGrid)) {
-        checkedGrid[down[0]][down[1]] = true;
-        if (grid[down[0]][down[1]]) {
-          sum.push(...calcGroup(down[0], down[1], checkedGrid));
-        }
-      }
-      if (isValid(left[0], left[1], checkedGrid)) {
-        checkedGrid[left[0]][left[1]] = true;
-        if (grid[left[0]][left[1]]) {
-          sum.push(...calcGroup(left[0], left[1], checkedGrid));
-        }
-      }
-      if (isValid(right[0], right[1], checkedGrid)) {
-        checkedGrid[right[0]][right[1]] = true;
-        if (grid[right[0]][right[1]]) {
-          sum.push(...calcGroup(right[0], right[1], checkedGrid));
-        }
-      }
+      });
 
       return sum;
     },
