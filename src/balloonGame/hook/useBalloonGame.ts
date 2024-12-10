@@ -58,11 +58,11 @@ export default function useBalloonGame({
     [rows, columns]
   );
 
-  const calcGroup = useCallback(
+  const findGroup = useCallback(
     (grid: boolean[][], x: number, y: number, checkedGrid: boolean[][]) => {
-      const sum: [number, number][] = [];
+      const group: [number, number][] = [];
 
-      sum.push([x, y]);
+      group.push([x, y]);
       checkedGrid[x][y] = true;
 
       directions.forEach((direction) => {
@@ -70,13 +70,14 @@ export default function useBalloonGame({
 
         if (isValid(grid, current[0], current[1], checkedGrid)) {
           checkedGrid[current[0]][current[1]] = true;
+
           if (grid[current[0]][current[1]]) {
-            sum.push(...calcGroup(grid, current[0], current[1], checkedGrid));
+            group.push(...findGroup(grid, current[0], current[1], checkedGrid));
           }
         }
       });
 
-      return sum;
+      return group;
     },
     [directions, isValid]
   );
@@ -86,7 +87,6 @@ export default function useBalloonGame({
 
     if (balloonCount[balloonCount.length - 1] === balloonGroup.length) {
       const newGrid = [...grid];
-
       balloonGroup.forEach(([x, y]) => (newGrid[x][y] = false));
 
       setGrid(newGrid);
@@ -109,42 +109,37 @@ export default function useBalloonGame({
       Array.from({ length: columns }, () => false)
     );
 
-    return calcGroup(grid, x, y, checkedGrid);
+    return findGroup(grid, x, y, checkedGrid);
   };
 
   const getBalloonCount = useCallback(
     (grid: boolean[][]) => {
-      const row = grid.length;
-      const column = grid[0].length;
+      const balloonCount: number[] = [];
 
-      const sum: number[] = [];
-
-      const checkedGrid = Array.from({ length: row }, () =>
-        Array.from({ length: column }, () => false)
+      const checkedGrid = Array.from({ length: rows }, () =>
+        Array.from({ length: columns }, () => false)
       );
 
       checkedGrid.forEach((rows, rowIndex) => {
         rows.forEach((_, columnIndex) => {
-          if (
-            isValid(grid, rowIndex, columnIndex, checkedGrid) &&
-            grid[rowIndex][columnIndex]
-          ) {
-            const ballonGroup = calcGroup(
+          if (isValid(grid, rowIndex, columnIndex, checkedGrid)) {
+            const ballonGroup = findGroup(
               grid,
               rowIndex,
               columnIndex,
               checkedGrid
             );
+
             if (ballonGroup.length) {
-              sum.push(ballonGroup.length);
+              balloonCount.push(ballonGroup.length);
             }
           }
         });
       });
 
-      return sum.sort((a, b) => a - b);
+      return balloonCount.sort((a, b) => a - b);
     },
-    [calcGroup, isValid]
+    [rows, columns, findGroup, isValid]
   );
 
   useEffect(() => {
