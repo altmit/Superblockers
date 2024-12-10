@@ -17,11 +17,15 @@ export default function useBalloonGame({
 
   const probability = balloonProbability / 100;
 
-  const generateGrid = Array.from({ length: rows }, () =>
-    Array.from({ length: columns }, () => Math.random() < probability)
+  const generateGrid = useCallback(
+    (rows: number, columns: number, probability: number) =>
+      Array.from({ length: rows }, () =>
+        Array.from({ length: columns }, () => Math.random() < probability)
+      ),
+    []
   );
 
-  const [grid, setGrid] = useState(generateGrid);
+  const [grid, setGrid] = useState(generateGrid(rows, columns, probability));
   const [balloonCount, setBalloonCount] = useState<number[]>([]);
   const [isFailure, setIsFailure] = useState(false);
 
@@ -41,7 +45,7 @@ export default function useBalloonGame({
   );
 
   const isValid = useCallback(
-    (x: number, y: number, checkedGrid: boolean[][]) => {
+    (grid: boolean[][], x: number, y: number, checkedGrid: boolean[][]) => {
       return (
         x >= 0 &&
         y >= 0 &&
@@ -51,11 +55,11 @@ export default function useBalloonGame({
         grid[x][y]
       );
     },
-    [grid, rows, columns]
+    [rows, columns]
   );
 
   const calcGroup = useCallback(
-    (x: number, y: number, checkedGrid: boolean[][]) => {
+    (grid: boolean[][], x: number, y: number, checkedGrid: boolean[][]) => {
       const sum: [number, number][] = [];
 
       sum.push([x, y]);
@@ -64,17 +68,17 @@ export default function useBalloonGame({
       directions.forEach((direction) => {
         const current = [x + direction[0], y + direction[1]];
 
-        if (isValid(current[0], current[1], checkedGrid)) {
+        if (isValid(grid, current[0], current[1], checkedGrid)) {
           checkedGrid[current[0]][current[1]] = true;
           if (grid[current[0]][current[1]]) {
-            sum.push(...calcGroup(current[0], current[1], checkedGrid));
+            sum.push(...calcGroup(grid, current[0], current[1], checkedGrid));
           }
         }
       });
 
       return sum;
     },
-    [directions, grid, isValid]
+    [directions, isValid]
   );
 
   const onClick = (rowIndex: number, columnIndex: number) => {
@@ -86,25 +90,24 @@ export default function useBalloonGame({
       balloonGroup.forEach(([x, y]) => (newGrid[x][y] = false));
 
       setGrid(newGrid);
+
+      setBalloonCount(getBalloonCount(newGrid));
     } else {
       setIsFailure(true);
     }
   };
 
   const onReset = () => {
-    setGrid(generateGrid);
+    setGrid(generateGrid(rows, columns, probability));
     setIsFailure(false);
   };
 
   const getBalloonGroup = (x: number, y: number) => {
-    const row = grid.length;
-    const column = grid[0].length;
-
-    const checkedGrid = Array.from({ length: row }, () =>
-      Array.from({ length: column }, () => false)
+    const checkedGrid = Array.from({ length: rows }, () =>
+      Array.from({ length: columns }, () => false)
     );
 
-    return calcGroup(x, y, checkedGrid);
+    return calcGroup(grid, x, y, checkedGrid);
   };
 
   const getBalloonCount = useCallback(
@@ -121,10 +124,15 @@ export default function useBalloonGame({
       checkedGrid.forEach((rows, rowIndex) => {
         rows.forEach((_, columnIndex) => {
           if (
-            isValid(rowIndex, columnIndex, checkedGrid) &&
+            isValid(grid, rowIndex, columnIndex, checkedGrid) &&
             grid[rowIndex][columnIndex]
           ) {
-            const ballonGroup = calcGroup(rowIndex, columnIndex, checkedGrid);
+            const ballonGroup = calcGroup(
+              grid,
+              rowIndex,
+              columnIndex,
+              checkedGrid
+            );
             if (ballonGroup.length) {
               sum.push(ballonGroup.length);
             }
@@ -138,8 +146,11 @@ export default function useBalloonGame({
   );
 
   useEffect(() => {
-    setBalloonCount(getBalloonCount(grid));
-  }, [grid, getBalloonCount]);
+    const newGrid = generateGrid(rows, columns, probability);
+
+    setGrid(newGrid);
+    setBalloonCount(getBalloonCount(newGrid));
+  }, [rows, columns, probability, generateGrid, getBalloonCount]);
 
   return {
     grid,
