@@ -26,7 +26,7 @@ export default function Dialog({ isOpen, title, onConfirm }: Props) {
   }, [isOpen]);
 
   return (
-    <StyledDialog ref={dialogRef} onClose={onClose}>
+    <StyledDialog ref={dialogRef} onClose={onClick}>
       <Title>{title}</Title>
       <StyledButton onClick={onClick}>확인</StyledButton>
     </StyledDialog>
