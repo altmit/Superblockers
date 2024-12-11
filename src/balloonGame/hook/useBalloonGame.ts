@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-type Props = {
+export type BalloonGameType = {
   rows?: number;
   columns?: number;
   balloonProbability?: number;
@@ -10,7 +10,7 @@ export default function useBalloonGame({
   rows = 6,
   columns = 6,
   balloonProbability = 30,
-}: Props) {
+}: BalloonGameType) {
   if (balloonProbability < 0 || balloonProbability > 100) {
     throw new Error("balloonProbability은 0이상, 100이하까지 가능합니다.");
   }
@@ -18,10 +18,28 @@ export default function useBalloonGame({
   const probability = balloonProbability / 100;
 
   const generateGrid = useCallback(
-    (rows: number, columns: number, probability: number) =>
-      Array.from({ length: rows }, () =>
-        Array.from({ length: columns }, () => Math.random() < probability)
-      ),
+    (rows: number, columns: number, probability: number) => {
+      let balloonCount = 0;
+
+      const grid = Array.from({ length: rows }, () =>
+        Array.from({ length: columns }, () => {
+          const hasBalloon = Math.random() < probability;
+          if (hasBalloon) {
+            balloonCount++;
+          }
+
+          return hasBalloon;
+        })
+      );
+
+      if (balloonCount === 0) {
+        const randomRow = Math.floor(Math.random() * rows);
+        const randomColumn = Math.floor(Math.random() * columns);
+        grid[randomRow][randomColumn] = true;
+      }
+
+      return grid;
+    },
     []
   );
 
