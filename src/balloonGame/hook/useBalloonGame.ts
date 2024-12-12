@@ -1,5 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+const DIRECTIONS = [
+  [-1, 0], // 상
+  [1, 0], // 하
+  [0, -1], // 좌
+  [0, 1], // 우
+];
+
 export type BalloonGameType = {
   rows?: number;
   columns?: number;
@@ -52,16 +59,6 @@ export default function useBalloonGame({
     [grid]
   );
 
-  const directions = useMemo(
-    () => [
-      [-1, 0], // 상
-      [1, 0], // 하
-      [0, -1], // 좌
-      [0, 1], // 우
-    ],
-    []
-  );
-
   const isValid = useCallback(
     (grid: boolean[][], x: number, y: number, checkedGrid: boolean[][]) => {
       return (
@@ -83,7 +80,7 @@ export default function useBalloonGame({
       group.push([x, y]);
       checkedGrid[x][y] = true;
 
-      directions.forEach((direction) => {
+      DIRECTIONS.forEach((direction) => {
         const current = [x + direction[0], y + direction[1]];
 
         if (isValid(grid, current[0], current[1], checkedGrid)) {
@@ -97,7 +94,7 @@ export default function useBalloonGame({
 
       return group;
     },
-    [directions, isValid]
+    [isValid]
   );
 
   const onClick = (rowIndex: number, columnIndex: number) => {
