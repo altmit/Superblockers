@@ -30,7 +30,9 @@ export default function useBalloonGame({
 
       const grid = Array.from({ length: rows }, () =>
         Array.from({ length: columns }, () => {
-          const hasBalloon = Math.random() < probability;
+          const hasBalloon =
+            probability === 1 ? true : Math.random() < probability;
+
           if (hasBalloon) {
             balloonCount++;
           }
@@ -103,6 +105,15 @@ export default function useBalloonGame({
   );
 
   const onClick = (rowIndex: number, columnIndex: number) => {
+    if (probability === 1) {
+      const newGrid = Array.from({ length: rows }, () =>
+        Array.from({ length: columns }, () => false)
+      );
+
+      setGrid(newGrid);
+      return;
+    }
+
     const balloonGroup = getBalloonGroup(rowIndex, columnIndex);
 
     if (balloonCount[balloonCount.length - 1] === balloonGroup.length) {
