@@ -1,17 +1,28 @@
+import { memo } from "react";
 import styled from "styled-components";
 
 type Props = {
   hasBalloon: boolean;
-  onClick: () => void;
+  rowIndex: number;
+  columnIndex: number;
+  onClick: (rowIndex: number, colIndex: number) => void;
 };
 
-export default function Cell({ hasBalloon, onClick }: Props) {
+export default memo(function Cell({
+  hasBalloon,
+  rowIndex,
+  columnIndex,
+  onClick,
+}: Props) {
   return (
-    <StyledCell onClick={onClick} $hasBalloon={hasBalloon}>
+    <StyledCell
+      onClick={() => onClick(rowIndex, columnIndex)}
+      $hasBalloon={hasBalloon}
+    >
       {hasBalloon ? "🎈" : ""}
     </StyledCell>
   );
-}
+});
 
 const StyledCell = styled.div<{ $hasBalloon: boolean }>`
   display: flex;
