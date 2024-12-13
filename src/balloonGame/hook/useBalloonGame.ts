@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
+const DIRECTIONS = [
+  [-1, 0], // 상
+  [1, 0], // 하
+  [0, -1], // 좌
+  [0, 1], // 우
+];
 
 export type BalloonGameType = {
   rows?: number;
@@ -23,7 +30,9 @@ export default function useBalloonGame({
 
       const grid = Array.from({ length: rows }, () =>
         Array.from({ length: columns }, () => {
-          const hasBalloon = Math.random() < probability;
+          const hasBalloon =
+            probability === 1 ? true : Math.random() < probability;
+
           if (hasBalloon) {
             balloonCount++;
           }
@@ -47,19 +56,12 @@ export default function useBalloonGame({
   const [balloonCount, setBalloonCount] = useState<number[]>([]);
   const [isFailure, setIsFailure] = useState(false);
 
+  const gridRef = useRef(grid);
+  const balloonCountRef = useRef(balloonCount);
+
   const isClear = useMemo(
     () => grid.every((row) => row.every((cell) => cell === false)),
     [grid]
-  );
-
-  const directions = useMemo(
-    () => [
-      [-1, 0], // 상
-      [1, 0], // 하
-      [0, -1], // 좌
-      [0, 1], // 우
-    ],
-    []
   );
 
   const isValid = useCallback(
@@ -79,56 +81,42 @@ export default function useBalloonGame({
   const findGroup = useCallback(
     (grid: boolean[][], x: number, y: number, checkedGrid: boolean[][]) => {
       const group: [number, number][] = [];
+      const queue = [[x, y]];
 
-      group.push([x, y]);
       checkedGrid[x][y] = true;
 
-      directions.forEach((direction) => {
-        const current = [x + direction[0], y + direction[1]];
+      while (queue.length > 0) {
+        const current = queue.shift()!;
+        group.push([current[0], current[1]]);
 
-        if (isValid(grid, current[0], current[1], checkedGrid)) {
-          checkedGrid[current[0]][current[1]] = true;
+        for (let i = 0; i < DIRECTIONS.length; i++) {
+          const direction = DIRECTIONS[i];
 
-          if (grid[current[0]][current[1]]) {
-            group.push(...findGroup(grid, current[0], current[1], checkedGrid));
+          const next_x = current[0] + direction[0];
+          const next_y = current[1] + direction[1];
+
+          if (isValid(grid, next_x, next_y, checkedGrid)) {
+            checkedGrid[next_x][next_y] = true;
+            queue.push([next_x, next_y]);
           }
         }
-      });
+      }
 
       return group;
     },
-    [directions, isValid]
+    [isValid]
   );
 
-  const onClick = (rowIndex: number, columnIndex: number) => {
-    const balloonGroup = getBalloonGroup(rowIndex, columnIndex);
+  const getBalloonGroup = useCallback(
+    (x: number, y: number) => {
+      const checkedGrid = Array.from({ length: rows }, () =>
+        Array.from({ length: columns }, () => false)
+      );
 
-    if (balloonCount[balloonCount.length - 1] === balloonGroup.length) {
-      const newGrid = [...grid];
-      balloonGroup.forEach(([x, y]) => (newGrid[x][y] = false));
-
-      setGrid(newGrid);
-      setBalloonCount(getBalloonCount(newGrid));
-    } else {
-      setIsFailure(true);
-    }
-  };
-
-  const onReset = () => {
-    const newGrid = generateGrid(rows, columns, probability);
-
-    setGrid(newGrid);
-    setBalloonCount(getBalloonCount(newGrid));
-    setIsFailure(false);
-  };
-
-  const getBalloonGroup = (x: number, y: number) => {
-    const checkedGrid = Array.from({ length: rows }, () =>
-      Array.from({ length: columns }, () => false)
-    );
-
-    return findGroup(grid, x, y, checkedGrid);
-  };
+      return findGroup(gridRef.current, x, y, checkedGrid);
+    },
+    [rows, columns, findGroup]
+  );
 
   const getBalloonCount = useCallback(
     (grid: boolean[][]) => {
@@ -160,12 +148,59 @@ export default function useBalloonGame({
     [rows, columns, findGroup, isValid]
   );
 
+  const onClick = useCallback(
+    (rowIndex: number, columnIndex: number) => {
+      if (probability === 1) {
+        const newGrid = Array.from({ length: rows }, () =>
+          Array.from({ length: columns }, () => false)
+        );
+
+        setGrid(newGrid);
+        return;
+      }
+
+      const balloonGroup = getBalloonGroup(rowIndex, columnIndex);
+
+      if (
+        balloonCountRef.current[balloonCountRef.current.length - 1] ===
+        balloonGroup.length
+      ) {
+        const newGrid = [...gridRef.current];
+        balloonGroup.forEach(([x, y]) => {
+          newGrid[x][y] = false;
+        });
+
+        setGrid(newGrid);
+        setBalloonCount(getBalloonCount(newGrid));
+      } else {
+        setIsFailure(true);
+      }
+    },
+    [rows, columns, probability, getBalloonGroup, getBalloonCount]
+  );
+
+  const onReset = () => {
+    const newGrid = generateGrid(rows, columns, probability);
+
+    setGrid(newGrid);
+    setBalloonCount(getBalloonCount(newGrid));
+    setIsFailure(false);
+  };
+
   useEffect(() => {
     const newGrid = generateGrid(rows, columns, probability);
 
     setGrid(newGrid);
     setBalloonCount(getBalloonCount(newGrid));
   }, [rows, columns, probability, generateGrid, getBalloonCount]);
+
+  useEffect(() => {
+    gridRef.current = grid;
+  }, [grid]);
+
+  useEffect(() => {
+    balloonCountRef.current = balloonCount;
+  }, [balloonCount]);
 
   return {
     grid,

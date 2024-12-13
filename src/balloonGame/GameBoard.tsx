@@ -26,15 +26,16 @@ export default function GameBoard({
                 <Cell
                   key={`${rowIndex}-${columnIndex}`}
                   hasBalloon={hasBalloon}
-                  onClick={
-                    hasBalloon ? () => onClick(rowIndex, columnIndex) : () => {}
-                  }
+                  rowIndex={rowIndex}
+                  columnIndex={columnIndex}
+                  onClick={onClick}
                 />
               ))}
             </Row>
           ))}
         </div>
       </StyledGameBoard>
+
       {(isClear || isFailure) && (
         <Dialog
           isOpen={isClear || isFailure}
