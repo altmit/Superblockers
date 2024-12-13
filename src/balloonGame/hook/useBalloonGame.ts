@@ -76,21 +76,26 @@ export default function useBalloonGame({
   const findGroup = useCallback(
     (grid: boolean[][], x: number, y: number, checkedGrid: boolean[][]) => {
       const group: [number, number][] = [];
+      const queue = [[x, y]];
 
-      group.push([x, y]);
       checkedGrid[x][y] = true;
 
-      DIRECTIONS.forEach((direction) => {
-        const current = [x + direction[0], y + direction[1]];
+      while (queue.length > 0) {
+        const current = queue.shift()!;
+        group.push([current[0], current[1]]);
 
-        if (isValid(grid, current[0], current[1], checkedGrid)) {
-          checkedGrid[current[0]][current[1]] = true;
+        for (let i = 0; i < DIRECTIONS.length; i++) {
+          const direction = DIRECTIONS[i];
 
-          if (grid[current[0]][current[1]]) {
-            group.push(...findGroup(grid, current[0], current[1], checkedGrid));
+          const next_x = current[0] + direction[0];
+          const next_y = current[1] + direction[1];
+
+          if (isValid(grid, next_x, next_y, checkedGrid)) {
+            checkedGrid[next_x][next_y] = true;
+            queue.push([next_x, next_y]);
           }
         }
-      });
+      }
 
       return group;
     },
