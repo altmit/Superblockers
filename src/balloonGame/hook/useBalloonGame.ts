@@ -171,7 +171,7 @@ export default function useBalloonGame({
         });
 
         setGrid(newGrid);
-        setBalloonCount(getBalloonCount(newGrid));
+        setBalloonCount(balloonCountRef.current.slice(0, -1));
       } else {
         setIsFailure(true);
       }
