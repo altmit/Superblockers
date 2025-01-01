@@ -58,6 +58,7 @@ export default function useBalloonGame({
 
   const gridRef = useRef(grid);
   const balloonCountRef = useRef(balloonCount);
+  const groupMap = useRef<Map<string, [number, number]> | null>(null);
 
   const isClear = useMemo(
     () => grid.every((row) => row.every((cell) => cell === false)),
@@ -107,20 +108,12 @@ export default function useBalloonGame({
     [isValid]
   );
 
-  const getBalloonGroup = useCallback(
-    (x: number, y: number) => {
-      const checkedGrid = Array.from({ length: rows }, () =>
-        Array.from({ length: columns }, () => false)
-      );
-
-      return findGroup(gridRef.current, x, y, checkedGrid);
-    },
-    [rows, columns, findGroup]
-  );
-
-  const getBalloonCount = useCallback(
+  const getBalloonInfo = useCallback(
     (grid: boolean[][]) => {
       const balloonCount: number[] = [];
+      const newGroupMap = new Map<string, [number, number]>();
+
+      let groupId = 0;
 
       const checkedGrid = Array.from({ length: rows }, () =>
         Array.from({ length: columns }, () => false)
@@ -129,21 +122,31 @@ export default function useBalloonGame({
       checkedGrid.forEach((rows, rowIndex) => {
         rows.forEach((_, columnIndex) => {
           if (isValid(grid, rowIndex, columnIndex, checkedGrid)) {
-            const ballonGroup = findGroup(
+            const balloonGroup = findGroup(
               grid,
               rowIndex,
               columnIndex,
               checkedGrid
             );
 
-            if (ballonGroup.length) {
-              balloonCount.push(ballonGroup.length);
+            if (balloonGroup.length) {
+              balloonCount.push(balloonGroup.length);
+
+              const currentGroupId = groupId++;
+              balloonGroup.forEach(([x, y]) => {
+                newGroupMap.set(`${x},${y}`, [
+                  balloonGroup.length,
+                  currentGroupId,
+                ]);
+              });
             }
           }
         });
       });
 
-      return balloonCount.sort((a, b) => a - b);
+      balloonCount.sort((a, b) => a - b);
+
+      return { balloonCount, ballonGroupMap: newGroupMap };
     },
     [rows, columns, findGroup, isValid]
   );
@@ -159,15 +162,27 @@ export default function useBalloonGame({
         return;
       }
 
-      const balloonGroup = getBalloonGroup(rowIndex, columnIndex);
+      const maxGroupCount =
+        balloonCountRef.current[balloonCountRef.current.length - 1];
 
-      if (
-        balloonCountRef.current[balloonCountRef.current.length - 1] ===
-        balloonGroup.length
-      ) {
+      const currentGroupInfo = groupMap.current?.get(
+        `${rowIndex},${columnIndex}`
+      );
+
+      if (!currentGroupInfo) {
+        setIsFailure(true);
+        return;
+      }
+
+      const [currentGroupCount, currentGroupId] = currentGroupInfo;
+
+      if (maxGroupCount === currentGroupCount) {
         const newGrid = [...gridRef.current];
-        balloonGroup.forEach(([x, y]) => {
-          newGrid[x][y] = false;
+        groupMap.current?.forEach(([_, groupId], key) => {
+          if (currentGroupId === groupId) {
+            const [x, y] = key.split(",").map(Number);
+            newGrid[x][y] = false;
+          }
         });
 
         setGrid(newGrid);
@@ -176,23 +191,29 @@ export default function useBalloonGame({
         setIsFailure(true);
       }
     },
-    [rows, columns, probability, getBalloonGroup, getBalloonCount]
+    [rows, columns, probability, getBalloonInfo]
   );
 
   const onReset = () => {
     const newGrid = generateGrid(rows, columns, probability);
+    const { balloonCount, ballonGroupMap } = getBalloonInfo(newGrid);
+
+    groupMap.current = ballonGroupMap;
 
     setGrid(newGrid);
-    setBalloonCount(getBalloonCount(newGrid));
+    setBalloonCount(balloonCount);
     setIsFailure(false);
   };
 
   useEffect(() => {
     const newGrid = generateGrid(rows, columns, probability);
+    const { balloonCount, ballonGroupMap } = getBalloonInfo(newGrid);
+
+    groupMap.current = ballonGroupMap;
 
     setGrid(newGrid);
-    setBalloonCount(getBalloonCount(newGrid));
-  }, [rows, columns, probability, generateGrid, getBalloonCount]);
+    setBalloonCount(balloonCount);
+  }, [rows, columns, probability, generateGrid, getBalloonInfo]);
 
   useEffect(() => {
     gridRef.current = grid;
@@ -206,6 +227,7 @@ export default function useBalloonGame({
     grid,
     isClear,
     isFailure,
+    groupMap,
     onClick,
     onReset,
   };
