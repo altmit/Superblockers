@@ -16,7 +16,7 @@ export default memo(function Cell({
 }: Props) {
   return (
     <StyledCell
-      onClick={() => onClick(rowIndex, columnIndex)}
+      onClick={hasBalloon ? () => onClick(rowIndex, columnIndex) : () => {}}
       $hasBalloon={hasBalloon}
     >
       {hasBalloon ? "🎈" : ""}
